@@ -3,13 +3,31 @@
 //
 #include "iostream"
 #include "argparse/argparse.hpp"
+#include <glob.h>
 #include <dirent.h>
 #include <set>
 #include <unistd.h>
 #include <string>
 
+argparse::ArgumentParser program("find_parser");
 std::string exec_dir;
 std::set<int> checked_entry_set;
+
+bool isWildcardMatch(const std::string &str, const std::string &pattern) {
+    bool match = false;
+
+    glob_t results;
+
+    glob(pattern.c_str(), GLOB_TILDE | GLOB_NOCHECK, nullptr, &results);
+
+    for (size_t i = 0; i < results.gl_pathc; i++) {
+        if (str == results.gl_pathv[i]) {
+            match = true;
+            break;
+        }
+    }
+    return match;
+}
 
 void list_entries(std::string path) {
     DIR *folder;
@@ -21,9 +39,16 @@ void list_entries(std::string path) {
         if(checked_entry_set.insert(entry->d_ino).second){
             std::string entry_name(entry->d_name);
             if (entry_name != "." && entry_name != "..") {
+
                 std::string current_path(getcwd( nullptr, 0));
                 current_path.erase(0, exec_dir.length()+1);
-                printf("%s/%s\n", current_path.c_str() , entry_name.c_str());
+                if (program.is_used("-name")) {
+                    if(isWildcardMatch(entry_name, program.get<std::string>("-name"))) {
+                        printf("%s/%s\n", current_path.c_str(), entry_name.c_str());
+                    }
+                } else {
+                    printf("%s/%s\n", current_path.c_str(), entry_name.c_str());
+                }
                 if (entry->d_type == DT_DIR) {
                     chdir(entry_name.c_str());
                     list_entries(".");
@@ -35,7 +60,6 @@ void list_entries(std::string path) {
 }
 
 int main(int argc, char *argv[]) {
-    argparse::ArgumentParser program("find_parser");
     program.add_argument("directory").default_value(".").required();
     program.add_argument("-name");
     program.add_argument("-type");
@@ -63,7 +87,26 @@ int main(int argc, char *argv[]) {
     if (path.back() != '/') {
         path += '/';
     }
-    printf("%s\n", path.c_str());
+
+    // get folder name
+    int beginning_of_folder_name;
+    for (beginning_of_folder_name = path.length()-2; beginning_of_folder_name >= 0; beginning_of_folder_name--) {
+        if (path[beginning_of_folder_name] == '/') {
+            break;
+        }
+    }
+    std::string folder_name = path.substr(beginning_of_folder_name+1, path.length()-beginning_of_folder_name-2);
+
+    // check if folder matches name argument
+    if (program.is_used("-name")) {
+        if(isWildcardMatch(folder_name, program.get<std::string>("-name"))) {
+            printf("%s\n", path.c_str());
+        }
+    } else {
+        printf("%s\n", path.c_str());
+    }
+
+    // change directory and list entries
     chdir(path.c_str());
     list_entries(".");
 
