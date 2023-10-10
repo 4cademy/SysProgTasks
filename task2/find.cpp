@@ -5,7 +5,10 @@
 #include "argparse/argparse.hpp"
 #include <dirent.h>
 #include <set>
+#include <unistd.h>
+#include <string>
 
+std::string exec_dir;
 std::set<int> checked_entry_set;
 
 void list_entries(std::string path) {
@@ -18,10 +21,13 @@ void list_entries(std::string path) {
         if(checked_entry_set.insert(entry->d_ino).second){
             std::string entry_name(entry->d_name);
             if (entry_name != "." && entry_name != "..") {
-                printf("%s%s\n", path.c_str(), entry_name.c_str());
+                std::string current_path(getcwd( nullptr, 0));
+                current_path.erase(0, exec_dir.length()+1);
+                printf("%s/%s\n", current_path.c_str() , entry_name.c_str());
                 if (entry->d_type == DT_DIR) {
-                    std::string new_path = path + entry_name + "/";
-                    list_entries(new_path);
+                    chdir(entry_name.c_str());
+                    list_entries(".");
+                    chdir("..");
                 }
             }
         }
@@ -49,13 +55,17 @@ int main(int argc, char *argv[]) {
         std::exit(1);
     }
 
+    // store execution directory
+    exec_dir = std::string(getcwd( nullptr, 0));
+
     std::string path = program.get<std::string>("directory");
     // add trailing slash if not present
     if (path.back() != '/') {
         path += '/';
     }
     printf("%s\n", path.c_str());
-    list_entries(path);
+    chdir(path.c_str());
+    list_entries(".");
 
     return 0;
 }
