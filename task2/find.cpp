@@ -3,31 +3,14 @@
 //
 #include "iostream"
 #include "argparse/argparse.hpp"
-#include <glob.h>
+#include <fnmatch.h>
 #include <dirent.h>
 #include <set>
 #include <unistd.h>
-#include <string>
 
 argparse::ArgumentParser program("find_parser");
 std::string exec_dir;
 std::set<int> checked_entry_set;
-
-bool isWildcardMatch(const std::string &str, const std::string &pattern) {
-    bool match = false;
-
-    glob_t results;
-
-    glob(pattern.c_str(), GLOB_TILDE | GLOB_NOCHECK, nullptr, &results);
-
-    for (size_t i = 0; i < results.gl_pathc; i++) {
-        if (str == results.gl_pathv[i]) {
-            match = true;
-            break;
-        }
-    }
-    return match;
-}
 
 void list_entries(std::string path) {
     DIR *folder;
@@ -43,7 +26,7 @@ void list_entries(std::string path) {
                 std::string current_path(getcwd( nullptr, 0));
                 current_path.erase(0, exec_dir.length()+1);
                 if (program.is_used("-name")) {
-                    if(isWildcardMatch(entry_name, program.get<std::string>("-name"))) {
+                    if( fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0 ) {
                         printf("%s/%s\n", current_path.c_str(), entry_name.c_str());
                     }
                 } else {
@@ -99,7 +82,7 @@ int main(int argc, char *argv[]) {
 
     // check if folder matches name argument
     if (program.is_used("-name")) {
-        if(isWildcardMatch(folder_name, program.get<std::string>("-name"))) {
+        if( fnmatch(program.get<std::string>("-name").c_str(), folder_name.c_str(), 0) == 0 ) {
             printf("%s\n", path.c_str());
         }
     } else {
