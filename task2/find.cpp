@@ -25,13 +25,27 @@ void list_entries(std::string path) {
 
                 std::string current_path(getcwd( nullptr, 0));
                 current_path.erase(0, exec_dir.length()+1);
-                if (program.is_used("-name")) {
-                    if( fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0 ) {
-                        printf("%s/%s\n", current_path.c_str(), entry_name.c_str());
+
+                if (program.is_used("-type")) {
+                    if ((program.get<std::string>("-type") == "d" && entry->d_type == DT_DIR) || (program.get<std::string>("-type") == "f" && entry->d_type == DT_REG) ) {
+                        if (program.is_used("-name")) {
+                            if( fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0 ) {
+                                printf("%s/%s\n", current_path.c_str(), entry_name.c_str());
+                            }
+                        } else {
+                            printf("%s/%s\n", current_path.c_str(), entry_name.c_str());
+                        }
                     }
                 } else {
-                    printf("%s/%s\n", current_path.c_str(), entry_name.c_str());
+                    if (program.is_used("-name")) {
+                        if( fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0 ) {
+                            printf("%s/%s\n", current_path.c_str(), entry_name.c_str());
+                        }
+                    } else {
+                        printf("%s/%s\n", current_path.c_str(), entry_name.c_str());
+                    }
                 }
+
                 if (entry->d_type == DT_DIR) {
                     chdir(entry_name.c_str());
                     list_entries(".");
@@ -62,6 +76,12 @@ int main(int argc, char *argv[]) {
         std::exit(1);
     }
 
+    // check if type argument is valid "f" or "d"
+    if (program.is_used("-type") && (program.get<std::string>("-type") != "d") && (program.get<std::string>("-type") != "f")) {
+        std::cerr << "find: unknown argument to -type: " << program.get<std::string>("-type") << std::endl;
+        std::exit(1);
+    }
+
     // store execution directory
     exec_dir = std::string(getcwd( nullptr, 0));
 
@@ -80,14 +100,28 @@ int main(int argc, char *argv[]) {
     }
     std::string folder_name = path.substr(beginning_of_folder_name+1, path.length()-beginning_of_folder_name-2);
 
-    // check if folder matches name argument
-    if (program.is_used("-name")) {
-        if( fnmatch(program.get<std::string>("-name").c_str(), folder_name.c_str(), 0) == 0 ) {
-            printf("%s\n", path.c_str());
+
+    if (program.is_used("-type")) {
+        if (program.get<std::string>("-type") == "d") {
+            if (program.is_used("-name")) {
+                if( fnmatch(program.get<std::string>("-name").c_str(), folder_name.c_str(), 0) == 0 ) {
+                    printf("%s\n", path.c_str());
+                }
+            } else {
+                printf("%s\n", path.c_str());
+            }
         }
     } else {
-        printf("%s\n", path.c_str());
+        if (program.is_used("-name")) {
+            if( fnmatch(program.get<std::string>("-name").c_str(), folder_name.c_str(), 0) == 0 ) {
+                printf("%s\n", path.c_str());
+            }
+        } else {
+            printf("%s\n", path.c_str());
+        }
     }
+    // check if folder matches name argument
+
 
     // change directory and list entries
     chdir(path.c_str());
