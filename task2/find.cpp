@@ -7,12 +7,14 @@
 #include <dirent.h>
 #include <set>
 #include <unistd.h>
+#include <sys/stat.h>
 
 argparse::ArgumentParser program("find_parser");
 std::string exec_dir;
 std::set<int> checked_entry_set;
 
 std::string current_path;
+dev_t exec_dev;
 
 void add_to_path(std::string str) {
     current_path += str;
@@ -39,6 +41,16 @@ bool is_link_loop(std::string link_name) {
 }
 
 void find() {
+
+    // check if xdev flag is set and if current directory is on different device as execution directory return
+    if(program.get<bool>("-xdev")) {
+        struct stat entry_stat;
+        stat(".", &entry_stat);
+        if (entry_stat.st_dev != exec_dev) {
+            return;
+        }
+    }
+
     DIR *folder;
     struct dirent *entry;
 
@@ -168,6 +180,13 @@ int main(int argc, char *argv[]) {
         std::cerr << "find: " << dir_arg << ": No such file or directory" << std::endl;
         std::exit(1);
     }
+
+    // get device id of execution directory
+    struct stat exec_dir_stat;
+    stat(".", &exec_dir_stat);
+    exec_dev = exec_dir_stat.st_dev;
+
+    // check if directory is absolute or relative and add to current_path
     if(dir_arg[0] == '/') {
         add_to_path(std::string(getcwd( nullptr, 0)));
     } else {
