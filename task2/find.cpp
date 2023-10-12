@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 
 argparse::ArgumentParser program("find_parser");
-std::set<int> checked_entry_set;
+std::set<std::string> checked_path_set;
 
 std::string current_path;
 dev_t exec_dev;
@@ -35,12 +35,71 @@ void remove_from_path() {
     current_path = current_path.substr(0, beginning_of_last_entry+1);
 }
 
-bool is_link_loop(std::string link_name) {
+bool isBrokenSymlink(std::string symlinkPath) {
+    struct stat symlinkInfo;
+    lstat(symlinkPath.c_str(), &symlinkInfo);
+
+    // Check if it's a symlink and if it doesn't point to a valid target
+    if (S_ISLNK(symlinkInfo.st_mode)) {
+        char targetPath[1024];
+        ssize_t targetLength = readlink(symlinkPath.c_str(), targetPath, sizeof(targetPath) - 1);
+
+        if (targetLength == -1) {
+            // The symlink is broken
+            return true;
+        }
+
+        targetPath[targetLength] = '\0';
+        struct stat targetInfo;
+
+        if (stat(targetPath, &targetInfo) == -1) {
+            // The symlink is broken
+            return true;
+        }
+    }
+
     return false;
 }
 
-void find() {
+bool is_link_loop(std::string origin, std::string next) {
+    chdir(next.c_str());
+    // check if xdev flag is set and if current directory is on different device as execution directory return
+    if(program.get<bool>("-xdev")) {
+        struct stat entry_stat;
+        stat(".", &entry_stat);
+        if (entry_stat.st_dev != exec_dev) {
+            chdir(origin.c_str());
+            return false;
+        }
+    }
 
+    if(checked_path_set.insert(std::string(getcwd( nullptr, 0))).second == false) {
+        chdir(origin.c_str());
+        return true;
+    } else {
+        DIR *folder;
+        struct dirent *entry;
+
+        folder = opendir(".");
+
+        while((entry= readdir(folder))) {
+            std::string entry_name(entry->d_name);
+            if (entry_name != "." && entry_name != "..") {
+                if (entry->d_type == DT_DIR || entry->d_type == DT_LNK) {
+                    if(is_link_loop(std::string(getcwd( nullptr, 0)), entry_name)) {
+                        chdir(origin.c_str());
+                        return true;
+                    }
+                }
+            }
+        }
+        chdir(origin.c_str());
+        return false;
+    }
+}
+
+void find(std::string origin, std::string next) {
+    chdir(next.c_str());
     // check if xdev flag is set and if current directory is on different device as execution directory return
     if(program.get<bool>("-xdev")) {
         struct stat entry_stat;
@@ -60,6 +119,7 @@ void find() {
         if (entry_name != "." && entry_name != "..") {
             // check if type flag is set and if entry is of correct type
             bool type_match = !program.is_used("-type") || program.is_used("-type") && ( (program.get<std::string>("-type") == "d" && entry->d_type == DT_DIR) || (program.get<std::string>("-type") == "f" && entry->d_type == DT_REG) );
+            // check if name flag is set and if entry name matches wildcard
             bool name_match = !program.is_used("-name") || program.is_used("-name") && (fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0);
 
             if (type_match && name_match) {
@@ -69,26 +129,27 @@ void find() {
             // check if entry is a directory and decent into it
             if (entry->d_type == DT_DIR) {
                 add_to_path(entry_name);
-                chdir(entry_name.c_str());
-                find();
-                chdir("..");
+                find(std::string(getcwd( nullptr, 0)), entry_name);
                 remove_from_path();
             }
 
             // check if entry is a symbolic link and if follow flag is set and if entry is not a link loop
-            if(entry->d_type == DT_LNK && program.get<bool>("-follow")) {
-                if(is_link_loop(entry_name)) {
-                    printf("find: File system loop detected; ‘%s%s’ is part of the same file system loop as ‘%s‘.\n", current_path.c_str(), entry_name.c_str(), current_path.c_str());
-                } else {
-                    add_to_path(entry_name);
-                    chdir(entry_name.c_str());
-                    find();
-                    chdir("..");
-                    remove_from_path();
+            if(program.get<bool>("-follow") && entry->d_type == DT_LNK) {
+                if(!isBrokenSymlink(entry_name)) {
+                    checked_path_set.clear();
+                    checked_path_set.insert(std::string(getcwd( nullptr, 0)));
+                    if(is_link_loop(std::string(getcwd( nullptr, 0)), entry_name)) {
+                        printf("find: File system loop detected; ‘%s%s’ is part of the same file system loop as ‘%s‘.\n", current_path.c_str(), entry_name.c_str(), current_path.c_str());
+                    } else {
+                        add_to_path(entry_name);
+                        find(std::string(getcwd( nullptr, 0)), entry_name.c_str());
+                        remove_from_path();
+                    }
                 }
             }
         }
     }
+    chdir(origin.c_str());
 }
 
 int main(int argc, char *argv[]) {
@@ -167,8 +228,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    chdir(current_path.c_str());
-    find();
+    find(std::string(getcwd( nullptr, 0)), current_path.c_str());
 
     return 0;
 }
