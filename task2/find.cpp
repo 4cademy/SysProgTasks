@@ -59,22 +59,11 @@ void find() {
         std::string entry_name(entry->d_name);
         if (entry_name != "." && entry_name != "..") {
             // check if type flag is set and if entry is of correct type
-            if (program.is_used("-type")) {
-                if ((program.get<std::string>("-type") == "d" && entry->d_type == DT_DIR) || (program.get<std::string>("-type") == "f" && entry->d_type == DT_REG) ) {
-                    // check if name flag is set and if entry name matches
-                    if (program.is_used("-name")) {
-                        if( fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0 ) {
-                            printf("%s%s\n", current_path.c_str(), entry_name.c_str());                        }
-                    } else {
-                        printf("%s%s\n", current_path.c_str(), entry_name.c_str());                    }
-                }
-            } else {
-                // check if name flag is set and if entry name matches
-                if (program.is_used("-name")) {
-                    if( fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0 ) {
-                        printf("%s%s\n", current_path.c_str(), entry_name.c_str());                    }
-                } else {
-                    printf("%s%s\n", current_path.c_str(), entry_name.c_str());                }
+            bool type_match = !program.is_used("-type") || program.is_used("-type") && ( (program.get<std::string>("-type") == "d" && entry->d_type == DT_DIR) || (program.get<std::string>("-type") == "f" && entry->d_type == DT_REG) );
+            bool name_match = !program.is_used("-name") || program.is_used("-name") && (fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0);
+
+            if (type_match && name_match) {
+                printf("%s%s\n", current_path.c_str(), entry_name.c_str());
             }
 
             // check if entry is a directory and decent into it
