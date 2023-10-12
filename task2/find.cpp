@@ -10,7 +10,6 @@
 #include <sys/stat.h>
 
 argparse::ArgumentParser program("find_parser");
-std::string exec_dir;
 std::set<int> checked_entry_set;
 
 std::string current_path;
@@ -168,18 +167,8 @@ int main(int argc, char *argv[]) {
         exec_folder_print = current_path;
     }
 
-    // check if execution folder matches criteria
-    if (program.is_used("-type")) {
-        if (program.get<std::string>("-type") == "d") {
-            if (program.is_used("-name")) {
-                if( fnmatch(program.get<std::string>("-name").c_str(), folder_name.c_str(), 0) == 0 ) {
-                    printf("%s\n", exec_folder_print.c_str());
-                }
-            } else {
-                printf("%s\n", exec_folder_print.c_str());
-            }
-        }
-    } else {
+    // check if execution folder matches -name wildcard
+    if (program.is_used("-type") && (program.get<std::string>("-type") == "d") || !program.is_used("-type")) {
         if (program.is_used("-name")) {
             if( fnmatch(program.get<std::string>("-name").c_str(), folder_name.c_str(), 0) == 0 ) {
                 printf("%s\n", exec_folder_print.c_str());
