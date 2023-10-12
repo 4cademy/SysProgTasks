@@ -12,6 +12,85 @@ argparse::ArgumentParser program("find_parser");
 std::string exec_dir;
 std::set<int> checked_entry_set;
 
+std::string current_path;
+
+void add_to_path(std::string str) {
+    current_path += str;
+    if(current_path.back() != '/') {
+        current_path += '/';
+    }
+}
+
+void remove_from_path() {
+    if (current_path.back() != '/') {
+        current_path.pop_back();
+    }
+    int beginning_of_last_entry;
+    for (beginning_of_last_entry = current_path.length()-2; beginning_of_last_entry >= 0; beginning_of_last_entry--) {
+        if (current_path[beginning_of_last_entry] == '/') {
+            break;
+        }
+    }
+    current_path = current_path.substr(0, beginning_of_last_entry+1);
+}
+
+bool is_link_loop(std::string link_name) {
+    return false;
+}
+
+void find() {
+    DIR *folder;
+    struct dirent *entry;
+
+    folder = opendir(".");
+
+    while((entry= readdir(folder))) {
+        std::string entry_name(entry->d_name);
+        if (entry_name != "." && entry_name != "..") {
+            // check if type flag is set and if entry is of correct type
+            if (program.is_used("-type")) {
+                if ((program.get<std::string>("-type") == "d" && entry->d_type == DT_DIR) || (program.get<std::string>("-type") == "f" && entry->d_type == DT_REG) ) {
+                    // check if name flag is set and if entry name matches
+                    if (program.is_used("-name")) {
+                        if( fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0 ) {
+                            printf("%s%s\n", current_path.c_str(), entry_name.c_str());                        }
+                    } else {
+                        printf("%s%s\n", current_path.c_str(), entry_name.c_str());                    }
+                }
+            } else {
+                // check if name flag is set and if entry name matches
+                if (program.is_used("-name")) {
+                    if( fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0 ) {
+                        printf("%s%s\n", current_path.c_str(), entry_name.c_str());                    }
+                } else {
+                    printf("%s%s\n", current_path.c_str(), entry_name.c_str());                }
+            }
+
+            // check if entry is a directory and decent into it
+            if (entry->d_type == DT_DIR) {
+                add_to_path(entry_name);
+                chdir(entry_name.c_str());
+                find();
+                chdir("..");
+                remove_from_path();
+            }
+
+            // check if entry is a symbolic link and if follow flag is set and if entry is not a link loop
+            if(entry->d_type == DT_LNK && program.get<bool>("-follow")) {
+                if(is_link_loop(entry_name)) {
+                    printf("find: File system loop detected; ‘%s%s’ is part of the same file system loop as ‘%s‘.\n", current_path.c_str(), entry_name.c_str(), current_path.c_str());
+                } else {
+                    add_to_path(entry_name);
+                    chdir(entry_name.c_str());
+                    find();
+                    chdir("..");
+                    remove_from_path();
+                }
+            }
+        }
+    }
+}
+
 void list_entries(std::string path) {
     DIR *folder;
     struct dirent *entry;
@@ -82,6 +161,63 @@ int main(int argc, char *argv[]) {
         std::exit(1);
     }
 
+    // NEW IMPLEMENTATION
+    std::string dir_arg = program.get<std::string>("directory");
+
+    if (chdir(dir_arg.c_str()) != 0) {
+        std::cerr << "find: " << dir_arg << ": No such file or directory" << std::endl;
+        std::exit(1);
+    }
+    if(dir_arg[0] == '/') {
+        add_to_path(std::string(getcwd( nullptr, 0)));
+    } else {
+        add_to_path(dir_arg);
+    }
+
+    // get execution folder name
+    int beginning_of_folder_name;
+    for (beginning_of_folder_name = current_path.length()-2; beginning_of_folder_name >= 0; beginning_of_folder_name--) {
+        if (current_path[beginning_of_folder_name] == '/') {
+            break;
+        }
+    }
+    std::string folder_name = current_path.substr(beginning_of_folder_name+1, current_path.length()-beginning_of_folder_name-2);
+
+    // remove or add trailing slash to match behaviour of GNU find
+    std::string exec_folder_print;
+    if ((dir_arg.back() == '/') && (current_path.back() != '/')) {
+        exec_folder_print = current_path += "/";
+    } else if ((dir_arg.back() != '/') && (current_path.back() == '/')) {
+        exec_folder_print = current_path.substr(0, current_path.length()-1);
+    } else {
+        exec_folder_print = current_path;
+    }
+
+    // check if execution folder matches criteria
+    if (program.is_used("-type")) {
+        if (program.get<std::string>("-type") == "d") {
+            if (program.is_used("-name")) {
+                if( fnmatch(program.get<std::string>("-name").c_str(), folder_name.c_str(), 0) == 0 ) {
+                    printf("%s\n", exec_folder_print.c_str());
+                }
+            } else {
+                printf("%s\n", exec_folder_print.c_str());
+            }
+        }
+    } else {
+        if (program.is_used("-name")) {
+            if( fnmatch(program.get<std::string>("-name").c_str(), folder_name.c_str(), 0) == 0 ) {
+                printf("%s\n", exec_folder_print.c_str());
+            }
+        } else {
+            printf("%s\n", exec_folder_print.c_str());
+        }
+    }
+
+    chdir(current_path.c_str());
+    find();
+
+/*
     // store execution directory
     exec_dir = std::string(getcwd( nullptr, 0));
 
@@ -120,12 +256,12 @@ int main(int argc, char *argv[]) {
             printf("%s\n", path.c_str());
         }
     }
-    // check if folder matches name argument
 
 
     // change directory and list entries
     chdir(path.c_str());
     list_entries(".");
+*/
 
     return 0;
 }

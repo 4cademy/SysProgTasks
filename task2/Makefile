@@ -6,7 +6,7 @@ TGT = find
 $(TGT): $(OBJ)
 	g++ -std=c++17 -o $@ $+
 
-%.o: %.cc Makefile
+%.o: %.c Makefile
 	g++ -std=c++17 -MMD -Wall -Werror -c -o $@ $<
 
 clean:
