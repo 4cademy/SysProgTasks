@@ -32,7 +32,6 @@ int main(int argc, char *argv[]) {
             printf("Error: Argument is not an Integer\n");
             return 1;
         } else {
-            printf("my_sincos(%s)\n", argv[1]);
             my_sincos(atoi(argv[1]));
         }
     }
