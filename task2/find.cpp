@@ -45,7 +45,7 @@ bool isBrokenSymlink(std::string symlinkPath) {
         ssize_t targetLength = readlink(symlinkPath.c_str(), targetPath, sizeof(targetPath) - 1);
 
         if (targetLength == -1) {
-            // The symlink is broken
+            // symlink is broken
             return true;
         }
 
@@ -53,12 +53,24 @@ bool isBrokenSymlink(std::string symlinkPath) {
         struct stat targetInfo;
 
         if (stat(targetPath, &targetInfo) == -1) {
-            // The symlink is broken
+            // symlink is broken
             return true;
         }
     }
 
     return false;
+}
+
+bool isSymlinkToFile(const std::string symlinkPath) {
+    struct stat targetStat;
+    stat(symlinkPath.c_str(), &targetStat);
+
+    if (S_ISREG(targetStat.st_mode)) {
+        // symlink points to a file
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool is_link_loop(std::string origin, std::string next) {
@@ -73,7 +85,7 @@ bool is_link_loop(std::string origin, std::string next) {
         }
     }
 
-    if(checked_path_set.insert(std::string(getcwd( nullptr, 0))).second == false) {
+    if(!checked_path_set.insert(std::string(getcwd( nullptr, 0))).second) {
         chdir(origin.c_str());
         return true;
     } else {
@@ -123,7 +135,20 @@ void find(std::string origin, std::string next) {
             bool name_match = !program.is_used("-name") || program.is_used("-name") && (fnmatch(program.get<std::string>("-name").c_str(), entry_name.c_str(), 0) == 0);
 
             if (type_match && name_match) {
-                printf("%s%s\n", current_path.c_str(), entry_name.c_str());
+                // suppress printing of link if it results in a loop (this matches the GNU find behavior)
+                if(program.get<bool>("-follow") && entry->d_type == DT_LNK) {
+                    if(!isBrokenSymlink(entry_name)) {
+                        if(!isSymlinkToFile(entry_name)) {
+                            checked_path_set.clear();
+                            checked_path_set.insert(std::string(getcwd( nullptr, 0)));
+                            if(!is_link_loop(std::string(getcwd( nullptr, 0)), entry_name)) {
+                                printf("%s%s\n", current_path.c_str(), entry_name.c_str());
+                            }
+                        }
+                    }
+                } else {
+                    printf("%s%s\n", current_path.c_str(), entry_name.c_str());
+                }
             }
 
             // check if entry is a directory and decent into it
@@ -136,14 +161,14 @@ void find(std::string origin, std::string next) {
             // check if entry is a symbolic link and if follow flag is set and if entry is not a link loop
             if(program.get<bool>("-follow") && entry->d_type == DT_LNK) {
                 if(!isBrokenSymlink(entry_name)) {
-                    checked_path_set.clear();
-                    checked_path_set.insert(std::string(getcwd( nullptr, 0)));
-                    if(is_link_loop(std::string(getcwd( nullptr, 0)), entry_name)) {
-                        printf("find: File system loop detected; ‘%s%s’ is part of the same file system loop as ‘%s‘.\n", current_path.c_str(), entry_name.c_str(), current_path.c_str());
-                    } else {
-                        add_to_path(entry_name);
-                        find(std::string(getcwd( nullptr, 0)), entry_name.c_str());
-                        remove_from_path();
+                    if(!isSymlinkToFile(entry_name)) {
+                        checked_path_set.clear();
+                        checked_path_set.insert(std::string(getcwd( nullptr, 0)));
+                        if(!is_link_loop(std::string(getcwd( nullptr, 0)), entry_name)) {
+                            add_to_path(entry_name);
+                            find(std::string(getcwd( nullptr, 0)), entry_name.c_str());
+                            remove_from_path();
+                        }
                     }
                 }
             }
