@@ -9,7 +9,7 @@ int main ()
 {
     char *line;
     while (true) {
-        line = readline (std::filesystem::current_path().c_str());
+        line = readline (std::filesystem::current_path().append("$ ").c_str());
         if (!line) break;
         printf ("You entered: %s\n", line);
         free (line);
