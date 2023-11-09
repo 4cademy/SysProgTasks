@@ -1,15 +1,11 @@
-SRC = myshell.cpp
-OBJ = $(SRC:.cpp=.o)
-DEP = $(SRC:.cpp=.d)
-TGT = myshell
+lex.yy.c: scan.l parse.tab.h
+	flex scan.l
 
-$(TGT): $(OBJ)
-	g++ -std=c++17 -o $@ $+ -lreadline
+parse.tab.c parse.tab.h: parse.y
+	bison -d parse.y
 
-%.o: %.cpp Makefile
-	g++ -std=c++17 -MMD -Wall -Werror -c -o $@ $<
+myshell: myshell.cpp lex.yy.c parse.tab.c parse.tab.h
+	g++ -o myshell myshell.cpp parse.tab.c lex.yy.c -lreadline -lfl
 
 clean:
-	rm -f $(OBJ) $(DEP) $(TGT)
-
--include $(DEP)
+	rm -f lex.yy.c parse.tab.c parse.tab.h myshell
