@@ -1,8 +1,8 @@
-/task3/myshell.d
-/task3/lex.yy.c
-/task3/parse.tab.c
-/task3/parse.tab.h
 /task1/main.d
 /task1/main.o
 /task1/sincos
 /task1/sincos.o
+/task3/myshell.d
+/task3/lex.yy.c
+/task3/parse.tab.c
+/task3/parse.tab.h
