@@ -3,7 +3,7 @@ OBJ = $(SRC:.cpp=.o)
 DEP = $(SRC:.cpp=.d)
 TGT = find
 
-$(TGT): $(OBJ)
+all: $(OBJ)
 	g++ -std=c++17 -o $@ $+
 
 %.o: %.c Makefile
