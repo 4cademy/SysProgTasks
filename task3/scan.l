@@ -1,6 +1,6 @@
 /* -*- indented-text -*- */
 %{
-#include "y.tab.h"
+#include "parse.tab.h"
 #include <string.h>
 
 #ifdef DOESNT_HAVE_STRDUP
@@ -28,3 +28,11 @@ exit            { ECHO; return EXIT; }
 {CHAR}+         { ECHO; yylval.string = strdup(yytext); return STRING; }
 .               ;
 %%
+
+void set_input_string(const char* in) {
+  yy_scan_string(in);
+}
+
+void end_lexical_scan(void) {
+  yy_delete_buffer(YY_CURRENT_BUFFER);
+}
