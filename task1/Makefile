@@ -2,19 +2,16 @@
 # Created by Marcel Beyer on 21.09.2023.
 #
 
-SRC = main.c sincos.c
-OBJ = $(SRC:.c=.o)
-DEP = $(SRC:.c=.d)
-TGT = sincos
-LIBS = -lm
+sincos: sincos.o main.o
+	gcc sincos.o main.o -o sincos -lm
 
-$(TGT): $(OBJ)
-	gcc -o $@ $+ $(LIBS)
+sincos.o: sincos.c sincos.h Makefile
+	gcc -MMD -Wall -Wextra -c sincos.c -o sincos.o -lm
 
-%.o: %.cc Makefile
-	gcc -MMD -Wall -Wextra -c -o $@ $< $(LIBS)
+main.o: main.c sincos.h Makefile
+	gcc -MMD -Wall -Wextra -c main.c -o main.o -lm
 
 clean:
-	rm -f $(OBJ) $(DEP) $(TGT)
+	rm -f sincos sincos.o main.o sincos.d main.d
 
--include $(DEP)
+-include sincos.d main.d
