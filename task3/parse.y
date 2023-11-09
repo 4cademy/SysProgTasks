@@ -4,10 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-#include "ShellState.h"
 
 int yylex(void);
-extern "C" void yyerror(char *s);
+void yyerror (char const *s) {
+   fprintf (stderr, "%s\n", s);
+ }
 
 %}
 
@@ -69,3 +70,14 @@ pipeline    : pipeline PIPE simple
         ;
 %%
 
+/* Declarations */
+void set_input_string(const char* in);
+void end_lexical_scan(void);
+
+/* This function parses a string */
+int parse_string(const char* in) {
+  set_input_string(in);
+  int rv = yyparse();
+  end_lexical_scan();
+  return rv;
+}
