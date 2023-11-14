@@ -23,7 +23,7 @@ void yyerror (char const *s) {
 
 %%
 cmd_line    :
-        | EXIT             { }
+        | EXIT             {}
         | pipeline back_ground
         ;
 
@@ -39,6 +39,7 @@ command     : command STRING
                 }
         | STRING
                 {
+
                 }
         ;
 
