@@ -23,7 +23,9 @@ void yyerror (char const *s) {
 
 %%
 cmd_line    :
-        | EXIT             {}
+        | EXIT             {
+                                exit(0);
+                            }
         | pipeline back_ground
         ;
 
