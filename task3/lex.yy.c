@@ -447,7 +447,7 @@ char *yytext;
 #line 1 "scan.l"
 /* -*- indented-text -*- */
 #line 3 "scan.l"
-#include "y.tab.h"
+#include "parse.tab.h"
 #include <string.h>
 
 #ifdef DOESNT_HAVE_STRDUP
@@ -1788,3 +1788,10 @@ void yyfree (void * ptr )
 #line 30 "scan.l"
 
 
+void set_input_string(const char* in) {
+  yy_scan_string(in);
+}
+
+void end_lexical_scan(void) {
+  yy_delete_buffer(YY_CURRENT_BUFFER);
+}

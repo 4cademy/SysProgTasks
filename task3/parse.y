@@ -3,12 +3,16 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <iostream>
+#include "functions.h"
 
 int yylex(void);
 void yyerror (char const *s) {
    fprintf (stderr, "%s\n", s);
  }
+
+char* args = "";
 
 %}
 
@@ -38,11 +42,15 @@ simple      : command redir
 
 command     : command STRING
                 {
-                }
-        | STRING
-                {
-
-                }
+                strcat(args, ":");
+		strcat(args, $2);
+		printf("command: %s\n", args);
+		}
+	| STRING
+		{
+		args = $1;
+		printf("command: %s\n", args);
+		}
         ;
 
 redir       : input_redir output_redir
@@ -69,6 +77,8 @@ pipeline    : pipeline PIPE simple
                 }
         | simple
                 {
+                char** argv = Split(args, ':');
+                ExecuteCommand(argv[0], argv);
                 }
         ;
 %%
