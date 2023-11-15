@@ -1,5 +1,5 @@
 //
-// Created by marcel on 11/14/23.
+// Created by Marcel Beyer on 11/14/23.
 //
 
 #include <fcntl.h>
@@ -10,10 +10,19 @@
 #include <sys/wait.h>
 #include "functions.h"
 
-void ExecuteCommand(char *command, char *arguments[], char* output) {
+void ExecuteCommand(char *command, char *arguments[], char* input, char* output) {
     int fd;
     pid_t pid = fork();
     if (pid == 0) {
+
+        if(strcmp(input, "") != 0) {
+            // Redirect stdin to file
+            close(STDIN_FILENO);
+            fd = open(input, O_RDONLY);
+            if (STDIN_FILENO != fd) {
+                dup2(fd, STDIN_FILENO);
+            }
+        }
 
         if(strcmp(output, "") != 0) {
             // Redirect stdout to file

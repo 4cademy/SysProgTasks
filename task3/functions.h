@@ -5,7 +5,7 @@
 #ifndef SYSPROGTASKS_FUNCTIONS_H
 #define SYSPROGTASKS_FUNCTIONS_H
 
-void ExecuteCommand(char *command, char *arguments[], char* output);
+void ExecuteCommand(char *command, char *arguments[], char* input, char* output);
 
 char** Split(char* a_str, char a_delim);
 

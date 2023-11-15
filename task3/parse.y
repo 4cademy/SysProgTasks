@@ -14,6 +14,7 @@ void yyerror (char const *s) {
 
 char* args = "";
 char* output = "";
+char* input = "";
 
 %}
 
@@ -34,8 +35,8 @@ cmd_line    :
         | pipeline back_ground
         ;
 
-back_ground : BACKGROUND        {  }
-        |                       {  }
+back_ground : BACKGROUND        { printf("background: background\n"); }
+        |                       { printf("background: empty\n");  }
         ;
 
 simple      : command redir
@@ -69,9 +70,11 @@ output_redir:    OUTPUT_REDIR STRING
 
 input_redir:    INPUT_REDIR STRING
                 {
+                input = $2;
                 }
         |       /* empty */
                 {
+                input = "";
 				}
         ;
 
@@ -81,7 +84,7 @@ pipeline    : pipeline PIPE simple
         | simple
                 {
                 char** argv = Split(args, ':');
-                ExecuteCommand(argv[0], argv, output);
+                ExecuteCommand(argv[0], argv, input, output);
                 }
         ;
 %%
