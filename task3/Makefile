@@ -6,7 +6,7 @@ lex.yy.c: scan.l
 parse.tab.c parse.tab.h: parse.y
 	bison -d parse.y
 
-myshell: myshell.cpp lex.yy.c parse.tab.c parse.tab.h
+myshell: myshell.cpp lex.yy.c parse.tab.c parse.tab.h parse.y scan.l functions.c
 	g++ myshell.cpp parse.tab.c lex.yy.c functions.c -o myshell -lreadline -lfl
 
 clean:

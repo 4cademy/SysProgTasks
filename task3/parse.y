@@ -13,6 +13,7 @@ void yyerror (char const *s) {
  }
 
 char* args = "";
+char* output = "";
 
 %}
 
@@ -57,10 +58,12 @@ redir       : input_redir output_redir
         ;
 
 output_redir:    OUTPUT_REDIR STRING
-                { 
+                {
+                output = $2;
                 }
         |        /* empty */
 				{
+				output = "";
 				}
         ;
 
@@ -78,7 +81,7 @@ pipeline    : pipeline PIPE simple
         | simple
                 {
                 char** argv = Split(args, ':');
-                ExecuteCommand(argv[0], argv);
+                ExecuteCommand(argv[0], argv, output);
                 }
         ;
 %%

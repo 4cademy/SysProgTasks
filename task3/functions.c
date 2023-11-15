@@ -10,9 +10,20 @@
 #include <sys/wait.h>
 #include "functions.h"
 
-void ExecuteCommand(char *command, char *arguments[]) {
+void ExecuteCommand(char *command, char *arguments[], char* output) {
+    int fd;
     pid_t pid = fork();
     if (pid == 0) {
+
+        if(strcmp(output, "") != 0) {
+            // Redirect stdout to file
+            close(STDOUT_FILENO);
+            fd = open(output, O_CREAT | O_TRUNC | O_WRONLY, S_IRWXU | S_IRGRP | S_IROTH);
+            if (STDOUT_FILENO != fd) {
+                dup2(fd, STDOUT_FILENO);
+            }
+        }
+
         execvp(command, arguments);
         exit(0);
     } else {
