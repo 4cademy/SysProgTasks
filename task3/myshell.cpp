@@ -23,3 +23,7 @@ int main ()
     }
     return 0;
 }
+
+void Execute(){
+    printf("Executing...\n");
+}

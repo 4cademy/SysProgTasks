@@ -6,6 +6,7 @@
 #include <string.h>
 #include <iostream>
 #include "functions.h"
+#include "myshell.h"
 
 int yylex(void);
 void yyerror (char const *s) {
@@ -30,6 +31,7 @@ char* input = "";
 %%
 cmd_line    :
         | EXIT             {
+                                Execute();
                                 exit(0);
                             }
         | pipeline back_ground
