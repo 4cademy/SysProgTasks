@@ -5,8 +5,21 @@
 #ifndef SYSPROGTASKS_MYSHELL_H
 #define SYSPROGTASKS_MYSHELL_H
 
+
+#include <stdbool.h>
+
 int main();
 
-void Execute();
+void execute(bool background);
+
+void new_command(char* name);
+
+void add_argument(char* arg);
+
+void set_input(char* input);
+
+void set_output(char* output);
+
+void print_commands();
 
 #endif //SYSPROGTASKS_MYSHELL_H

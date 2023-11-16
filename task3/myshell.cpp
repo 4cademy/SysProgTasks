@@ -9,6 +9,9 @@
 #include "readline/readline.h"
 #include "readline/history.h"
 #include "parse.tab.h"
+#include <iostream>
+
+#define Log(x) std::cout << x << std::endl;
 
 extern int parse_string(const char* in); // Declare the function from parse.y
 
@@ -54,6 +57,18 @@ void set_output(char* output){
     command_list.back().output = output;
 }
 
-void execute(){
-    printf("Executing...\n");
+void print_commands(){
+    for (auto & command : command_list) {
+        std::cout << command.name << " ";
+        for (auto & argument : command.arguments) {
+            std::cout << argument << " ";
+        }
+        std::cout << "< " << command.input << " ";
+        std::cout << "> " << command.output << std::endl;
+    }
+}
+
+void execute(bool background){
+    print_commands();
+    command_list.clear();
 }

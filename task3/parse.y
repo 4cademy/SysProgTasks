@@ -31,14 +31,17 @@ char* input = "";
 %%
 cmd_line    :
         | EXIT             {
-                                Execute();
                                 exit(0);
                             }
         | pipeline back_ground
         ;
 
-back_ground : BACKGROUND        { printf("background: background\n"); }
-        |                       { printf("background: empty\n");  }
+back_ground : BACKGROUND        {
+                                execute(true);
+                                }
+        |                       {
+                                execute(false);
+                                }
         ;
 
 simple      : command redir
@@ -46,14 +49,11 @@ simple      : command redir
 
 command     : command STRING
                 {
-                strcat(args, ":");
-		strcat(args, $2);
-		printf("command: %s\n", args);
+                add_argument($2);
 		}
 	| STRING
 		{
-		args = $1;
-		printf("command: %s\n", args);
+		new_command($1);
 		}
         ;
 
@@ -62,21 +62,19 @@ redir       : input_redir output_redir
 
 output_redir:    OUTPUT_REDIR STRING
                 {
-                output = $2;
+                set_output($2);
                 }
         |        /* empty */
 				{
-				output = "";
 				}
         ;
 
 input_redir:    INPUT_REDIR STRING
                 {
-                input = $2;
+                set_input($2);
                 }
         |       /* empty */
                 {
-                input = "";
 				}
         ;
 
@@ -85,8 +83,6 @@ pipeline    : pipeline PIPE simple
                 }
         | simple
                 {
-                char** argv = Split(args, ':');
-                ExecuteCommand(argv[0], argv, input, output);
                 }
         ;
 %%
