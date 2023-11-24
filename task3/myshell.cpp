@@ -70,23 +70,31 @@ void print_commands(){
 
 void execute(bool background){
     print_commands();
+    int fd;
 
     pid_t pid = fork();
+
     if (pid == 0) {
         if(!command_list[0].input.empty()){
             // Redirect stdin to file
             close(STDIN_FILENO);
-            int fd = open(command_list[0].input.c_str(), O_RDONLY);
+            fd = open(command_list[0].input.c_str(), O_RDONLY);
             if (STDIN_FILENO != fd) {
                 dup2(fd, STDIN_FILENO);
             }
         }
-        std::cout << "Here: " << std::endl;
-        std::cout << command_list[0].arguments[0] << std::endl;
-        std::cout << command_list[0].arguments.data() << std::endl;
+
+        if(!command_list[0].output.empty()){
+            // Redirect stdout to file
+            close(STDOUT_FILENO);
+            fd = open(command_list[0].output.c_str(), O_CREAT | O_TRUNC | O_WRONLY);
+            if (STDOUT_FILENO != fd) {
+                dup2(fd, STDOUT_FILENO);
+            }
+        }
 
         if(execvp(command_list[0].arguments[0], command_list[0].arguments.data()) == -1){
-            std::cout << "Error executing" << std::endl;
+            std::cerr << "Error executing" << std::endl;
         }
         exit(0);
     } else if (pid > 0){
