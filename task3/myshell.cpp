@@ -93,6 +93,7 @@ void execute(bool background){
             }
         }
 
+        command_list[0].arguments.push_back(nullptr);
         if(execvp(command_list[0].arguments[0], command_list[0].arguments.data()) == -1){
             std::cerr << "Error executing" << std::endl;
         }
