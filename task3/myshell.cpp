@@ -68,13 +68,39 @@ void print_commands(){
     }
 }
 
-void connectOutput(int pipeFD[2]){
+void outputToFile(const std::string& path){
+    int fd = open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY);
+    if(fd == -1){
+        std::cerr << "Error opening output file." << std::endl;
+        exit(-1);
+    } else {
+        close(STDOUT_FILENO);
+        if (STDOUT_FILENO != fd) {
+            dup2(fd, STDOUT_FILENO);
+        }
+    }
+}
+
+void inputFromFile(const std::string& path){
+    int fd = open(path.c_str(), O_RDONLY);
+    if (fd == -1) {
+        std::cerr << "Error opening input file." << std::endl;
+        exit(-1);
+    } else {
+        close(STDIN_FILENO);
+        if (STDIN_FILENO != fd) {
+            dup2(fd, STDIN_FILENO);
+        }
+    }
+}
+
+void outputToPipe(int pipeFD[2]){
     close(pipeFD[0]); // No need to read
     close(STDOUT_FILENO);
     dup2(pipeFD[1], STDOUT_FILENO);
 }
 
-void connectInput(int pipeFD[2]) {
+void inputFromPipe(int pipeFD[2]) {
     close(pipeFD[1]); // No not need to write;
     close(STDIN_FILENO);
     dup2(pipeFD[0], STDIN_FILENO);
@@ -93,35 +119,52 @@ void executeFromList(int index) {
 void execute(bool background){
     print_commands();
 
-    // execute single command
-
-
-
-
     int fd;
 
     pid_t pid = fork();
 
-    if (pid == 0) { // fork out from shell
-        int pipeFD[2];
-        if (pipe(pipeFD) == -1) {   // Create pipe
-            std::cerr << "Error creating pipe." << std::endl;
-            exit(-1);
-        } else {
-            pid_t pid2 = fork();
-            if (pid2 == 0) { // child aka. writer
-                connectOutput(pipeFD);
-                executeFromList(0);
-
-            } else if (pid2 > 0) { // parent aka. reader
-                wait(nullptr);
-                connectInput(pipeFD);
-                executeFromList(1);
+    // execute single command
+    if (command_list.size() == 1) {
+        if (pid == 0) { // fork out from shell
+            if(!command_list[0].input.empty()){
+                // Redirect stdin to file
+                inputFromFile(command_list[0].input);
             }
+
+            if(!command_list[0].output.empty()){
+                // Redirect stdout to file
+                outputToFile(command_list[0].output);
+            }
+
+            executeFromList(0);
             exit(0);
+        } else if (pid > 0){
+            wait(nullptr);  // Shell waits for child to finish
         }
-    } else if (pid > 0) {
-        wait(nullptr);  // Shell waits for child to finish
+    } else if (command_list.size() > 1) {   // execute pipeline
+        if (pid == 0) { // fork out from shell
+            int pipeFD[2];
+            if (pipe(pipeFD) == -1) {   // Create pipe
+                std::cerr << "Error creating pipe." << std::endl;
+                exit(-1);
+            } else {
+                pid_t pid2 = fork();
+                if (pid2 == 0) { // child aka. writer
+                    outputToPipe(pipeFD);
+                    executeFromList(0);
+
+                } else if (pid2 > 0) { // parent aka. reader
+                    wait(nullptr);
+                    inputFromPipe(pipeFD);
+                    executeFromList(1);
+                }
+                exit(0);
+            }
+        } else if (pid > 0) {
+            wait(nullptr);  // Shell waits for child to finish
+        }
+    } else {
+        std::cerr << "No commands to execute." << std::endl;
     }
 
     command_list.clear();
