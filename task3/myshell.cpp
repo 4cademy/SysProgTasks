@@ -131,11 +131,14 @@ void forkNext(int index, int pipeFD_prev[2] = nullptr){
     // If index is 0, then we are at the first command -> we can just execute it
     if (index == 0) {
         if (pipeFD_prev != nullptr) {
+            if (!command_list[index].input.empty()) {
+                inputFromFile(command_list[index].input);
+            }
             outputToPipe(pipeFD_prev);
-            executeFromList(index);
-        } else {
-            executeFromList(index);
+        } else if (!command_list[index].output.empty()){
+            outputToFile(command_list[index].output);
         }
+        executeFromList(index);
         exit(0);
     } else {    // If index is not 0, then we create a pipe and fork out
         int pipeFD[2];
@@ -151,6 +154,8 @@ void forkNext(int index, int pipeFD_prev[2] = nullptr){
                 inputFromPipe(pipeFD);
                 if (pipeFD_prev != nullptr) {
                     outputToPipe(pipeFD_prev);
+                } else if (!command_list[index].output.empty()){
+                    outputToFile(command_list[index].output);
                 }
                 executeFromList(index);
             }
