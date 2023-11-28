@@ -14,8 +14,6 @@
 #include <csignal>
 #include <sys/wait.h>
 
-#define Log(x) std::cout << x << std::endl;
-
 extern int parse_string(const char* in); // Declare the function from parse.y
 
 struct {
@@ -106,8 +104,21 @@ void inputFromPipe(int pipeFD[2]) {
     dup2(pipeFD[0], STDIN_FILENO);
 }
 
+void print_to_terminal(const char* message) {
+    int fd = open("/dev/tty", O_WRONLY);
+    if (fd == -1) {
+        perror("open");
+        return;
+    }
+
+    write(fd, message, strlen(message));
+    close(fd);
+}
+
 void executeFromList(int index) {
     command_list[index].arguments.push_back(nullptr);
+    std::string text = "\nExecuting  " + std::to_string(index);
+    print_to_terminal(text.c_str());
     if (execvp(command_list[index].arguments[0], command_list[index].arguments.data()) == -1) {
         std::cerr << "Error executing" << std::endl;
         exit(-1);
@@ -117,7 +128,7 @@ void executeFromList(int index) {
 }
 
 void forkNext(int index, int pipeFD_prev[2] = nullptr){
-    // If index is 0, then we are at the last command -> we can just execute it
+    // If index is 0, then we are at the first command -> we can just execute it
     if (index == 0) {
         if (pipeFD_prev != nullptr) {
             outputToPipe(pipeFD_prev);
@@ -137,8 +148,10 @@ void forkNext(int index, int pipeFD_prev[2] = nullptr){
                 forkNext(index - 1, pipeFD);
             } else if (pid > 0) {
                 wait(nullptr);  // Wait for the child to finish
-                std::cout << "Execute " << index << std::endl;
                 inputFromPipe(pipeFD);
+                if (pipeFD_prev != nullptr) {
+                    outputToPipe(pipeFD_prev);
+                }
                 executeFromList(index);
             }
             exit(0);
