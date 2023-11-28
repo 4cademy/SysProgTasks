@@ -116,33 +116,47 @@ void executeFromList(int index) {
     }
 }
 
-void forkNext(int index){
-    pid_t pid = fork();
-    if (pid == 0) { // child
-        // Redirect stdin from file to pipe
-        if(index == 0){
-            if(!command_list[0].input.empty()){
-                // Redirect stdin to file
-                inputFromFile(command_list[0].input);
-            }
-            // Redirect stdout from pipe to file
-            if(index == command_list.size() - 1){
-                if(!command_list[index].output.empty()){
-                    // Redirect stdout to file
-                    outputToFile(command_list[index].output);
-                }
-            }
+void forkNext(int index, int pipeFD_prev[2] = nullptr){
+    // If index is 0, then we are at the last command -> we can just execute it
+    if (index == 0) {
+        if (pipeFD_prev != nullptr) {
+            outputToPipe(pipeFD_prev);
             executeFromList(index);
+        } else {
+            executeFromList(index);
+        }
+        exit(0);
+    } else {    // If index is not 0, then we create a pipe and fork out
+        int pipeFD[2];
+        if (pipe(pipeFD) == -1) {   // Create pipe
+            std::cerr << "Error creating pipe." << std::endl;
+            exit(-1);
+        }  else {
+            pid_t pid = fork();
+            if (pid == 0) { // child
+                forkNext(index - 1, pipeFD);
+            } else if (pid > 0) {
+                wait(nullptr);  // Wait for the child to finish
+                inputFromPipe(pipeFD);
+                executeFromList(index);
+            }
             exit(0);
         }
-    } else if (pid > 0){
-        wait(nullptr);  // Wait for the child to finish
     }
 }
 
 void execute(bool background){
     print_commands();
+    pid_t pid = fork();
+    if (pid == 0) {
+        forkNext(int(command_list.size() - 1));
+    } else if (pid > 0) {
+        if (!background) {
+            wait(nullptr);
+        }
+    }
 
+#if 0
     // execute single command
     if (command_list.size() == 1) {
         forkNext(0);
@@ -172,6 +186,7 @@ void execute(bool background){
     } else {
         std::cerr << "No commands to execute." << std::endl;
     }
+#endif
 
     command_list.clear();
 }
