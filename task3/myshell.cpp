@@ -14,8 +14,6 @@
 #include <csignal>
 #include <sys/wait.h>
 
-#define Log(x) std::cout << x << std::endl;
-
 extern int parse_string(const char* in); // Declare the function from parse.y
 
 struct {
@@ -106,8 +104,21 @@ void inputFromPipe(int pipeFD[2]) {
     dup2(pipeFD[0], STDIN_FILENO);
 }
 
+void print_to_terminal(const char* message) {
+    int fd = open("/dev/tty", O_WRONLY);
+    if (fd == -1) {
+        perror("open");
+        return;
+    }
+
+    write(fd, message, strlen(message));
+    close(fd);
+}
+
 void executeFromList(int index) {
     command_list[index].arguments.push_back(nullptr);
+    std::string text = "\nExecuting  " + std::to_string(index);
+    print_to_terminal(text.c_str());
     if (execvp(command_list[index].arguments[0], command_list[index].arguments.data()) == -1) {
         std::cerr << "Error executing" << std::endl;
         exit(-1);
@@ -116,32 +127,55 @@ void executeFromList(int index) {
     }
 }
 
+void forkNext(int index, int pipeFD_prev[2] = nullptr){
+    // If index is 0, then we are at the first command -> we can just execute it
+    if (index == 0) {
+        if (pipeFD_prev != nullptr) {
+            outputToPipe(pipeFD_prev);
+            executeFromList(index);
+        } else {
+            executeFromList(index);
+        }
+        exit(0);
+    } else {    // If index is not 0, then we create a pipe and fork out
+        int pipeFD[2];
+        if (pipe(pipeFD) == -1) {   // Create pipe
+            std::cerr << "Error creating pipe." << std::endl;
+            exit(-1);
+        }  else {
+            pid_t pid = fork();
+            if (pid == 0) { // child
+                forkNext(index - 1, pipeFD);
+            } else if (pid > 0) {
+                wait(nullptr);  // Wait for the child to finish
+                inputFromPipe(pipeFD);
+                if (pipeFD_prev != nullptr) {
+                    outputToPipe(pipeFD_prev);
+                }
+                executeFromList(index);
+            }
+            exit(0);
+        }
+    }
+}
+
 void execute(bool background){
     print_commands();
-
-    int fd;
-
     pid_t pid = fork();
+    if (pid == 0) {
+        forkNext(int(command_list.size() - 1));
+    } else if (pid > 0) {
+        if (!background) {
+            wait(nullptr);
+        }
+    }
 
+#if 0
     // execute single command
     if (command_list.size() == 1) {
-        if (pid == 0) { // fork out from shell
-            if(!command_list[0].input.empty()){
-                // Redirect stdin to file
-                inputFromFile(command_list[0].input);
-            }
-
-            if(!command_list[0].output.empty()){
-                // Redirect stdout to file
-                outputToFile(command_list[0].output);
-            }
-
-            executeFromList(0);
-            exit(0);
-        } else if (pid > 0){
-            wait(nullptr);  // Shell waits for child to finish
-        }
+        forkNext(0);
     } else if (command_list.size() > 1) {   // execute pipeline
+        pid_t pid = fork();
         if (pid == 0) { // fork out from shell
             int pipeFD[2];
             if (pipe(pipeFD) == -1) {   // Create pipe
@@ -166,6 +200,7 @@ void execute(bool background){
     } else {
         std::cerr << "No commands to execute." << std::endl;
     }
+#endif
 
     command_list.clear();
 }
