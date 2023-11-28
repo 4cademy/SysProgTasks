@@ -20,6 +20,4 @@ void set_input(char* input);
 
 void set_output(char* output);
 
-void print_commands();
-
 #endif //SYSPROGTASKS_MYSHELL_H
