@@ -137,6 +137,7 @@ void forkNext(int index, int pipeFD_prev[2] = nullptr){
                 forkNext(index - 1, pipeFD);
             } else if (pid > 0) {
                 wait(nullptr);  // Wait for the child to finish
+                std::cout << "Execute " << index << std::endl;
                 inputFromPipe(pipeFD);
                 executeFromList(index);
             }
