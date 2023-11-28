@@ -68,38 +68,60 @@ void print_commands(){
     }
 }
 
+void connectOutput(int pipeFD[2]){
+    close(pipeFD[0]); // No need to read
+    close(STDOUT_FILENO);
+    dup2(pipeFD[1], STDOUT_FILENO);
+}
+
+void connectInput(int pipeFD[2]) {
+    close(pipeFD[1]); // No not need to write;
+    close(STDIN_FILENO);
+    dup2(pipeFD[0], STDIN_FILENO);
+}
+
+void executeFromList(int index) {
+    command_list[index].arguments.push_back(nullptr);
+    if (execvp(command_list[index].arguments[0], command_list[index].arguments.data()) == -1) {
+        std::cerr << "Error executing" << std::endl;
+        exit(-1);
+    } else {
+        exit(0);
+    }
+}
+
 void execute(bool background){
     print_commands();
+
+    // execute single command
+
+
+
+
     int fd;
 
     pid_t pid = fork();
 
-    if (pid == 0) {
-        if(!command_list[0].input.empty()){
-            // Redirect stdin to file
-            close(STDIN_FILENO);
-            fd = open(command_list[0].input.c_str(), O_RDONLY);
-            if (STDIN_FILENO != fd) {
-                dup2(fd, STDIN_FILENO);
-            }
-        }
+    if (pid == 0) { // fork out from shell
+        int pipeFD[2];
+        if (pipe(pipeFD) == -1) {   // Create pipe
+            std::cerr << "Error creating pipe." << std::endl;
+            exit(-1);
+        } else {
+            pid_t pid2 = fork();
+            if (pid2 == 0) { // child aka. writer
+                connectOutput(pipeFD);
+                executeFromList(0);
 
-        if(!command_list[0].output.empty()){
-            // Redirect stdout to file
-            close(STDOUT_FILENO);
-            fd = open(command_list[0].output.c_str(), O_CREAT | O_TRUNC | O_WRONLY);
-            if (STDOUT_FILENO != fd) {
-                dup2(fd, STDOUT_FILENO);
+            } else if (pid2 > 0) { // parent aka. reader
+                wait(nullptr);
+                connectInput(pipeFD);
+                executeFromList(1);
             }
+            exit(0);
         }
-
-        command_list[0].arguments.push_back(nullptr);
-        if(execvp(command_list[0].arguments[0], command_list[0].arguments.data()) == -1){
-            std::cerr << "Error executing" << std::endl;
-        }
-        exit(0);
-    } else if (pid > 0){
-        wait(nullptr);
+    } else if (pid > 0) {
+        wait(nullptr);  // Shell waits for child to finish
     }
 
     command_list.clear();
