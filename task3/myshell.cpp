@@ -116,32 +116,38 @@ void executeFromList(int index) {
     }
 }
 
-void execute(bool background){
-    print_commands();
-
-    int fd;
-
+void forkNext(int index){
     pid_t pid = fork();
-
-    // execute single command
-    if (command_list.size() == 1) {
-        if (pid == 0) { // fork out from shell
+    if (pid == 0) { // child
+        // Redirect stdin from file to pipe
+        if(index == 0){
             if(!command_list[0].input.empty()){
                 // Redirect stdin to file
                 inputFromFile(command_list[0].input);
             }
-
-            if(!command_list[0].output.empty()){
-                // Redirect stdout to file
-                outputToFile(command_list[0].output);
+            // Redirect stdout from pipe to file
+            if(index == command_list.size() - 1){
+                if(!command_list[index].output.empty()){
+                    // Redirect stdout to file
+                    outputToFile(command_list[index].output);
+                }
             }
-
-            executeFromList(0);
+            executeFromList(index);
             exit(0);
-        } else if (pid > 0){
-            wait(nullptr);  // Shell waits for child to finish
         }
+    } else if (pid > 0){
+        wait(nullptr);  // Wait for the child to finish
+    }
+}
+
+void execute(bool background){
+    print_commands();
+
+    // execute single command
+    if (command_list.size() == 1) {
+        forkNext(0);
     } else if (command_list.size() > 1) {   // execute pipeline
+        pid_t pid = fork();
         if (pid == 0) { // fork out from shell
             int pipeFD[2];
             if (pipe(pipeFD) == -1) {   // Create pipe
