@@ -116,14 +116,30 @@ void print_to_terminal(const char* message) {
 }
 
 void executeFromList(int index) {
-    command_list[index].arguments.push_back(nullptr);
-    std::string text = "\nExecuting  " + std::to_string(index);
-    print_to_terminal(text.c_str());
-    if (execvp(command_list[index].arguments[0], command_list[index].arguments.data()) == -1) {
-        std::cerr << "Error executing" << std::endl;
-        exit(-1);
-    } else {
+    if (strcmp(command_list[index].arguments[0], "pwd") == 0) {
+        char* pwd = get_current_dir_name();
+        std::cout << pwd << std::endl;
+        free(pwd);
         exit(0);
+    } else if (strcmp(command_list[index].arguments[0], "cd") == 0) {
+        if (command_list[index].arguments.size() > 1) {
+            if (chdir(command_list[index].arguments[1]) == -1) {
+                std::cout << "Error changing directory." << std::endl;
+            }
+        } else {
+            std::cout << "No directory specified." << std::endl;
+        }
+        exit(0);
+    } else {
+        command_list[index].arguments.push_back(nullptr);
+        std::string text = "\nExecuting  " + std::to_string(index);
+        print_to_terminal(text.c_str());
+        if (execvp(command_list[index].arguments[0], command_list[index].arguments.data()) == -1) {
+            std::cerr << "Error executing" << std::endl;
+            exit(-1);
+        } else {
+            exit(0);
+        }
     }
 }
 
@@ -166,46 +182,25 @@ void forkNext(int index, int pipeFD_prev[2] = nullptr){
 
 void execute(bool background){
     print_commands();
-    pid_t pid = fork();
-    if (pid == 0) {
-        forkNext(int(command_list.size() - 1));
-    } else if (pid > 0) {
-        if (!background) {
-            wait(nullptr);
-        }
-    }
 
-#if 0
-    // execute single command
-    if (command_list.size() == 1) {
-        forkNext(0);
-    } else if (command_list.size() > 1) {   // execute pipeline
-        pid_t pid = fork();
-        if (pid == 0) { // fork out from shell
-            int pipeFD[2];
-            if (pipe(pipeFD) == -1) {   // Create pipe
-                std::cerr << "Error creating pipe." << std::endl;
-                exit(-1);
-            } else {
-                pid_t pid2 = fork();
-                if (pid2 == 0) { // child aka. writer
-                    outputToPipe(pipeFD);
-                    executeFromList(0);
-
-                } else if (pid2 > 0) { // parent aka. reader
-                    wait(nullptr);
-                    inputFromPipe(pipeFD);
-                    executeFromList(1);
-                }
-                exit(0);
+    if (strcmp(command_list[0].arguments[0], "cd") == 0) {
+        if (command_list[0].arguments.size() > 1) {
+            if (chdir(command_list[0].arguments[1]) == -1) {
+                std::cout << "Error changing directory." << std::endl;
             }
-        } else if (pid > 0) {
-            wait(nullptr);  // Shell waits for child to finish
+        } else {
+            std::cout << "No directory specified." << std::endl;
         }
     } else {
-        std::cerr << "No commands to execute." << std::endl;
+        pid_t pid = fork();
+        if (pid == 0) {
+            forkNext(int(command_list.size() - 1));
+        } else if (pid > 0) {
+            if (!background) {
+                wait(nullptr);
+            }
+        }
     }
-#endif
 
     command_list.clear();
 }
