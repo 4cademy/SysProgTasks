@@ -121,9 +121,9 @@ void executeFromList(int index) {
         std::cout << pwd << std::endl;
         free(pwd);
         exit(0);
-    } else if (strcmp(command_list[0].arguments[0], "cd") == 0) {
-        if (command_list[0].arguments.size() > 1) {
-            if (chdir(command_list[0].arguments[1]) == -1) {
+    } else if (strcmp(command_list[index].arguments[0], "cd") == 0) {
+        if (command_list[index].arguments.size() > 1) {
+            if (chdir(command_list[index].arguments[1]) == -1) {
                 std::cout << "Error changing directory." << std::endl;
             }
         } else {
