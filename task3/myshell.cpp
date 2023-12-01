@@ -120,6 +120,16 @@ void executeFromList(int index) {
         char* pwd = get_current_dir_name();
         std::cout << pwd << std::endl;
         free(pwd);
+        exit(0);
+    } else if (strcmp(command_list[0].arguments[0], "cd") == 0) {
+        if (command_list[0].arguments.size() > 1) {
+            if (chdir(command_list[0].arguments[1]) == -1) {
+                std::cout << "Error changing directory." << std::endl;
+            }
+        } else {
+            std::cout << "No directory specified." << std::endl;
+        }
+        exit(0);
     } else {
         command_list[index].arguments.push_back(nullptr);
         std::string text = "\nExecuting  " + std::to_string(index);
