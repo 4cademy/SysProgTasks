@@ -27,9 +27,11 @@ std::vector<command> command_list;
 int main ()
 {
     char *line;
+    using_history();
     while (true) {
         line = readline (std::filesystem::current_path().append("$ ").c_str());
         if (!line) break;
+        add_history(line);
         parse_string(line); // Call the lexer with the input line
         free (line);
     }
