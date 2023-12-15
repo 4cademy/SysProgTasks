@@ -191,6 +191,14 @@ void execute(bool background){
         } else {
             std::cout << "No directory specified." << std::endl;
         }
+    } else if (strcmp(command_list[0].arguments[0], "kill") == 0) {
+        if (command_list[0].arguments.size() == 3) {
+            if (kill(atoi(command_list[0].arguments[2]), atoi(command_list[0].arguments[1])) == -1) {
+                std::cout << "Error killing process." << std::endl;
+            }
+        } else {
+            std::cout << "Specify as follows: kill <signo> <pid> " << std::endl;
+        }
     } else {
         pid_t pid = fork();
         if (pid == 0) {
