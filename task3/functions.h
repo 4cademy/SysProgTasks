@@ -1,12 +1,16 @@
 //
 // Created by marcel on 11/14/23.
 //
+#include <vector>
+
 
 #ifndef SYSPROGTASKS_FUNCTIONS_H
 #define SYSPROGTASKS_FUNCTIONS_H
 
-void ExecuteCommand(char *command, char *arguments[], char* input, char* output);
+void shell_pwd();
 
-char** Split(char* a_str, char a_delim);
+void shell_cd(const std::vector<char*>& args);
+
+void shell_kill(const std::vector<char*>& args);
 
 #endif //SYSPROGTASKS_FUNCTIONS_H

@@ -13,6 +13,7 @@
 #include <iostream>
 #include <csignal>
 #include <sys/wait.h>
+#include "functions.h"
 
 extern int parse_string(const char* in); // Declare the function from parse.y
 
@@ -119,18 +120,13 @@ void print_to_terminal(const char* message) {
 
 void executeFromList(int index) {
     if (strcmp(command_list[index].arguments[0], "pwd") == 0) {
-        char* pwd = get_current_dir_name();
-        std::cout << pwd << std::endl;
-        free(pwd);
+        shell_pwd();
         exit(0);
     } else if (strcmp(command_list[index].arguments[0], "cd") == 0) {
-        if (command_list[index].arguments.size() > 1) {
-            if (chdir(command_list[index].arguments[1]) == -1) {
-                std::cout << "Error changing directory." << std::endl;
-            }
-        } else {
-            std::cout << "No directory specified." << std::endl;
-        }
+        shell_cd(command_list[index].arguments);
+        exit(0);
+    } else if (strcmp(command_list[0].arguments[0], "kill") == 0) {
+        shell_kill(command_list[0].arguments);
         exit(0);
     } else {
         command_list[index].arguments.push_back(nullptr);
@@ -186,21 +182,9 @@ void execute(bool background){
     print_commands();
 
     if (strcmp(command_list[0].arguments[0], "cd") == 0) {
-        if (command_list[0].arguments.size() > 1) {
-            if (chdir(command_list[0].arguments[1]) == -1) {
-                std::cout << "Error changing directory." << std::endl;
-            }
-        } else {
-            std::cout << "No directory specified." << std::endl;
-        }
+        shell_cd(command_list[0].arguments);
     } else if (strcmp(command_list[0].arguments[0], "kill") == 0) {
-        if (command_list[0].arguments.size() == 3) {
-            if (kill(atoi(command_list[0].arguments[2]), atoi(command_list[0].arguments[1])) == -1) {
-                std::cout << "Error killing process." << std::endl;
-            }
-        } else {
-            std::cout << "Specify as follows: kill <signo> <pid> " << std::endl;
-        }
+        shell_kill(command_list[0].arguments);
     } else {
         pid_t pid = fork();
         if (pid == 0) {
