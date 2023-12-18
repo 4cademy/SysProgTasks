@@ -128,11 +128,21 @@ void executeFromList(int index) {
     } else if (strcmp(command_list[0].arguments[0], "kill") == 0) {
         shell_kill(command_list[0].arguments);
         exit(0);
+    } else if (strcmp(command_list[0].arguments[0], "alias") == 0) {
+        shell_alias(command_list[0].arguments);
+        exit(0);
+    } else if (strcmp(command_list[0].arguments[0], "unalias") == 0) {
+        shell_unalias(command_list[0].arguments);
+        exit(0);
     } else {
         command_list[index].arguments.push_back(nullptr);
         std::string text = "\nExecuting  " + std::to_string(index);
         print_to_terminal(text.c_str());
-        if (execvp(command_list[index].arguments[0], command_list[index].arguments.data()) == -1) {
+
+        // Replace alias with actual command if it exists
+        char* actual_command = get_command(command_list[index].arguments[0]);
+        std::cout << actual_command << std::endl;
+        if (execvp(actual_command, command_list[index].arguments.data()) == -1) {
             std::cerr << "Error executing" << std::endl;
             exit(-1);
         } else {
@@ -185,6 +195,10 @@ void execute(bool background){
         shell_cd(command_list[0].arguments);
     } else if (strcmp(command_list[0].arguments[0], "kill") == 0) {
         shell_kill(command_list[0].arguments);
+    } else if (strcmp(command_list[0].arguments[0], "alias") == 0) {
+        shell_alias(command_list[0].arguments);
+    } else if (strcmp(command_list[0].arguments[0], "unalias") == 0) {
+        shell_unalias(command_list[0].arguments);
     } else {
         pid_t pid = fork();
         if (pid == 0) {

@@ -13,4 +13,10 @@ void shell_cd(const std::vector<char*>& args);
 
 void shell_kill(const std::vector<char*>& args);
 
+void shell_alias(const std::vector<char *> &args);
+
+void shell_unalias(const std::vector<char *> &args);
+
+char* get_command(char* name);
+
 #endif //SYSPROGTASKS_FUNCTIONS_H
