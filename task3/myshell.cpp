@@ -14,6 +14,7 @@
 #include <csignal>
 #include <sys/wait.h>
 #include "functions.h"
+#include <string.h>
 
 extern int parse_string(const char* in); // Declare the function from parse.y
 
@@ -137,13 +138,9 @@ void executeFromList(int index) {
     } else {
         command_list[index].arguments.push_back(nullptr);
         std::string text = "\nExecuting  " + std::to_string(index);
-        print_to_terminal(text.c_str());
-
-        // Replace alias with actual command if it exists
-        char* actual_command = get_command(command_list[index].arguments[0]);
-        std::cout << actual_command << std::endl;
-        if (execvp(actual_command, command_list[index].arguments.data()) == -1) {
-            std::cerr << "Error executing" << std::endl;
+        // print_to_terminal(text.c_str());
+        if (execvp(command_list[index].arguments[0], command_list[index].arguments.data()) == -1) {
+            std::cerr << strerror(errno) << std::endl;
             exit(-1);
         } else {
             exit(0);
@@ -189,7 +186,13 @@ void forkNext(int index, int pipeFD_prev[2] = nullptr){
 }
 
 void execute(bool background){
-    print_commands();
+    // print_commands();
+
+    for (auto & cmd : command_list) {
+        cmd.arguments[0] = get_command(cmd.arguments[0]);
+    }
+    // std::cout << "After aliasing: " << std::endl;
+    // print_commands();
 
     if (strcmp(command_list[0].arguments[0], "cd") == 0) {
         shell_cd(command_list[0].arguments);

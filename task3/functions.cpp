@@ -20,10 +20,10 @@ void shell_pwd(){
 void shell_cd(const std::vector<char*>& args){
     if (args.size() > 1) {
         if (chdir(args[1]) == -1) {
-            std::cout << "Error changing directory." << std::endl;
+            std::cout << "No such file or directory" << std::endl;
         }
     } else {
-        std::cout << "No directory specified." << std::endl;
+        std::cout << "No directory specified" << std::endl;
     }
 }
 
