@@ -1,4 +1,5 @@
-Aufruf zum Finden des Passworts:
+# Fehler finden und mehr mit GDB - Task 4 Sysprog Praktikum
+## Aufrufe zum Finden des Passworts:
 ```bash
 marcel@MarcelsPC:~/SysProgTasks/task4$ gdb ./simple_login
 GNU gdb (Ubuntu 12.1-0ubuntu1~22.04) 12.1
@@ -98,9 +99,8 @@ Successful login! Now, we would execute a shell ...
 marcel@MarcelsPC:~/SysProgTasks/task4$
 ```
 
+Passwort: AaMilmFS+z11/2J
 
-Passwort:
-AaMilmFS+z11/2J
 
 Segmentation Fault bei:
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -280,3 +280,34 @@ Ablauf richtiges PW:
  804848d:       5d                      pop    %ebp
  804848e:       8d 61 fc                lea    -0x4(%ecx),%esp
  8048491:       c3                      ret
+
+
+# Wie man den Segmentationsfehler bei Nutzung des ./cracker verhindern kann:
+
+The difference in behavior between the two commands is related to how they handle file descriptors and redirections.
+
+In the first command:
+
+```bash
+./cracker 08048473 | ./simple_login
+```
+
+The `|` (pipe) operator creates a pipeline between the two commands (`./cracker` and `./simple_login`). This means that the standard output (stdout) of `./cracker` is connected directly to the standard input (stdin) of `./simple_login`. The shell manages the file descriptors for you, and when the pipeline completes, the file descriptors are closed automatically.
+
+In the second command:
+
+```bash
+(./cracker 08048473; cat) | ./simple_login
+```
+
+The use of parentheses `( ... )` creates a subshell. The semicolon `;` is a command separator, allowing you to run multiple commands in sequence. The subshell runs the commands `./cracker 08048473` and `cat` sequentially. The output of both commands is then piped to `./simple_login`.
+
+However, the presence of `cat` in the subshell introduces an additional file descriptor. After the subshell completes, the file descriptor for the output of `cat` is not automatically closed. This can lead to unexpected behavior, and if the program on the right side of the pipe (`./simple_login`) tries to read from the pipe after the subshell completes, it may encounter issues related to the open file descriptor.
+
+If you want to ensure that the file descriptors are closed after the subshell, you can use the `exec` command to replace the shell with the specified command. For example:
+
+```bash
+(exec ./cracker 08048473; cat) | ./simple_login
+```
+
+The `exec` command replaces the shell with the specified command, and this can help avoid keeping unnecessary file descriptors open.
