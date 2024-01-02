@@ -265,17 +265,17 @@ Ablauf richtiges PW:
  804844b:       e8 b8 fe ff ff          call   8048308 <puts@plt>
 [2]8048450:       e8 4f ff ff ff          call   80483a4 <verify_password>
  8048455:       89 45 f8                mov    %eax,-0x8(%ebp)
-[3]8048458:       83 7d f8 00             cmpl   $0x0,-0x8(%ebp)
+[7]8048458:       83 7d f8 00             cmpl   $0x0,-0x8(%ebp)
  804845c:       75 15                   jne    8048473 <main+0x40>
  804845e:       c7 04 24 8b 85 04 08    movl   $0x804858b,(%esp)
  8048465:       e8 9e fe ff ff          call   8048308 <puts@plt>
  804846a:       c7 45 e8 01 00 00 00    movl   $0x1,-0x18(%ebp)
  8048471:       eb 13                   jmp    8048486 <main+0x53>
-[4]8048473:       c7 04 24 98 85 04 08    movl   $0x8048598,(%esp)
+[8]8048473:       c7 04 24 98 85 04 08    movl   $0x8048598,(%esp)
  804847a:       e8 89 fe ff ff          call   8048308 <puts@plt>
-[5]804847f:       c7 45 e8 00 00 00 00    movl   $0x0,-0x18(%ebp)
+[9]804847f:       c7 45 e8 00 00 00 00    movl   $0x0,-0x18(%ebp)
  8048486:       8b 45 e8                mov    -0x18(%ebp),%eax
-[6]8048489:       83 c4 24                add    $0x24,%esp
+[10]8048489:       83 c4 24                add    $0x24,%esp
  804848c:       59                      pop    %ecx
  804848d:       5d                      pop    %ebp
  804848e:       8d 61 fc                lea    -0x4(%ecx),%esp
