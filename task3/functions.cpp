@@ -68,8 +68,17 @@ void shell_unalias(const std::vector<char*> &args){
 }
 
 std::vector<char*> get_command(char* name){
-    if (aliases.find(name) != aliases.end()) {
-        return aliases[name];
+    std::vector<char*> command;
+    command.push_back(name);
+
+    while (aliases.find(name) != aliases.end()) {
+        std::vector<char*> alias = aliases[name];
+        name = alias[0];
+
+        std::vector new_command = std::vector<char*>(alias.begin(), alias.end());
+        new_command.insert(new_command.end(), command.begin() + 1, command.end());
+        command = new_command;
     }
-    return std::vector<char*>{name};
+
+    return command;
 }
