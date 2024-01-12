@@ -8,7 +8,7 @@
 #include <csignal>
 #include <map>
 
-std::map<std::string, std::string> aliases;
+std::map<std::string, std::vector<char*>> aliases;
 
 
 void shell_pwd(){
@@ -39,29 +39,37 @@ void shell_kill(const std::vector<char *> &args) {
 
 void shell_alias(const std::vector<char *> &args) {
     if (args.size() >= 3) {
-        aliases[args[1]] = args[2];
+        aliases[args[1]] = std::vector<char*>(args.begin() + 2, args.end());
     } else {
         std::cout << "Specify alias as follows: alias <name> <command> " << std::endl;
     }
     for (auto const& [key, val] : aliases) {
-        std::cout << key << " = " << val << std::endl;
+        std::cout << key << " = ";
+        for (auto const& arg : val) {
+            std::cout << arg << " ";
+        }
+        std::cout << std::endl;
     }
 }
 
-void shell_unalias(const std::vector<char *> &args){
+void shell_unalias(const std::vector<char*> &args){
     if (args.size() >= 2) {
         aliases.erase(args[1]);
     } else {
         std::cout << "Specify unalias as follows: unalias <name> " << std::endl;
     }
     for (auto const& [key, val] : aliases) {
-        std::cout << key << " = " << val << std::endl;
+        std::cout << key << " = ";
+        for (auto const& arg : val) {
+            std::cout << arg << " ";
+        }
+        std::cout << std::endl;
     }
 }
 
-char* get_command(char* name){
+std::vector<char*> get_command(char* name){
     if (aliases.find(name) != aliases.end()) {
-        return (char*) aliases[name].c_str();
+        return aliases[name];
     }
-    return name;
+    return std::vector<char*>{name};
 }

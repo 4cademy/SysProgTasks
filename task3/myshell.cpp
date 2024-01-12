@@ -189,7 +189,13 @@ void execute(bool background){
     // print_commands();
 
     for (auto & cmd : command_list) {
-        cmd.arguments[0] = get_command(cmd.arguments[0]);
+        char* name = cmd.arguments[0];
+        std::vector<char*> rest = std::vector<char*>(cmd.arguments.begin() + 1, cmd.arguments.end());
+        std::vector<char*> resolved = get_command(name);
+
+        cmd.arguments.clear();
+        cmd.arguments.insert(cmd.arguments.end(), resolved.begin(), resolved.end());
+        cmd.arguments.insert(cmd.arguments.end(), rest.begin(), rest.end());
     }
     // std::cout << "After aliasing: " << std::endl;
     // print_commands();
