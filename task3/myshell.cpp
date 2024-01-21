@@ -27,8 +27,15 @@ struct {
 
 std::vector<command> command_list;
 
+void handle_sigchld(int sig) {
+    while (waitpid(-1, 0, WNOHANG) > 0) {
+        // This loop will reap all zombie processes
+    }
+}
+
 int main ()
 {
+    signal(SIGCHLD, handle_sigchld);
     char *line;
     using_history();
     while (true) {
