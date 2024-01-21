@@ -8,14 +8,16 @@
 #include "functions.h"
 #include "myshell.h"
 
-int yylex(void);
+extern "C" int yylex(void);
+#define YY_DECL extern "C" int yylex();
+
 void yyerror (char const *s) {
    fprintf (stderr, "%s\n", s);
  }
 
-char* args = "";
-char* output = "";
-char* input = "";
+char* args;
+char* output;
+char* input;
 
 %}
 

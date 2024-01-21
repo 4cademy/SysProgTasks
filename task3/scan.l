@@ -1,7 +1,10 @@
 /* -*- indented-text -*- */
 %{
-#include "parse.tab.h"
 #include <string.h>
+
+#include "parse.tab.h"
+
+extern "C" int yylex (void);
 
 #ifdef DOESNT_HAVE_STRDUP
 #warning DOESNT_HAVE_STRDUP

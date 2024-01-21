@@ -76,17 +76,19 @@
 #include "functions.h"
 #include "myshell.h"
 
-int yylex(void);
+extern "C" int yylex(void);
+#define YY_DECL extern "C" int yylex();
+
 void yyerror (char const *s) {
    fprintf (stderr, "%s\n", s);
  }
 
-char* args = "";
-char* output = "";
-char* input = "";
+char* args;
+char* output;
+char* input;
 
 
-#line 90 "parse.tab.c"
+#line 92 "parse.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -519,8 +521,8 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    32,    32,    33,    36,    39,    42,    47,    50,    54,
-      60,    63,    68,    72,    77,    81,    84
+       0,    34,    34,    35,    38,    41,    44,    49,    52,    56,
+      62,    65,    70,    74,    79,    83,    86
 };
 #endif
 
@@ -1086,91 +1088,91 @@ yyreduce:
   switch (yyn)
     {
   case 3: /* cmd_line: EXIT  */
-#line 33 "parse.y"
+#line 35 "parse.y"
                            {
                                 exit(0);
                             }
-#line 1094 "parse.tab.c"
+#line 1096 "parse.tab.c"
     break;
 
   case 5: /* back_ground: BACKGROUND  */
-#line 39 "parse.y"
+#line 41 "parse.y"
                                 {
                                 execute(true);
                                 }
-#line 1102 "parse.tab.c"
+#line 1104 "parse.tab.c"
     break;
 
   case 6: /* back_ground: %empty  */
-#line 42 "parse.y"
+#line 44 "parse.y"
                                 {
                                 execute(false);
                                 }
-#line 1110 "parse.tab.c"
+#line 1112 "parse.tab.c"
     break;
 
   case 8: /* command: command STRING  */
-#line 51 "parse.y"
+#line 53 "parse.y"
                 {
                 add_argument((yyvsp[0].string));
 		}
-#line 1118 "parse.tab.c"
+#line 1120 "parse.tab.c"
     break;
 
   case 9: /* command: STRING  */
-#line 55 "parse.y"
+#line 57 "parse.y"
                 {
 		new_command((yyvsp[0].string));
 		}
-#line 1126 "parse.tab.c"
+#line 1128 "parse.tab.c"
     break;
 
   case 11: /* output_redir: OUTPUT_REDIR STRING  */
-#line 64 "parse.y"
+#line 66 "parse.y"
                 {
                 set_output((yyvsp[0].string));
                 }
-#line 1134 "parse.tab.c"
+#line 1136 "parse.tab.c"
     break;
 
   case 12: /* output_redir: %empty  */
-#line 68 "parse.y"
+#line 70 "parse.y"
                                 {
 				}
-#line 1141 "parse.tab.c"
+#line 1143 "parse.tab.c"
     break;
 
   case 13: /* input_redir: INPUT_REDIR STRING  */
-#line 73 "parse.y"
+#line 75 "parse.y"
                 {
                 set_input((yyvsp[0].string));
                 }
-#line 1149 "parse.tab.c"
+#line 1151 "parse.tab.c"
     break;
 
   case 14: /* input_redir: %empty  */
-#line 77 "parse.y"
+#line 79 "parse.y"
                 {
 				}
-#line 1156 "parse.tab.c"
+#line 1158 "parse.tab.c"
     break;
 
   case 15: /* pipeline: pipeline PIPE simple  */
-#line 82 "parse.y"
+#line 84 "parse.y"
                 {
                 }
-#line 1163 "parse.tab.c"
+#line 1165 "parse.tab.c"
     break;
 
   case 16: /* pipeline: simple  */
-#line 85 "parse.y"
+#line 87 "parse.y"
                 {
                 }
-#line 1170 "parse.tab.c"
+#line 1172 "parse.tab.c"
     break;
 
 
-#line 1174 "parse.tab.c"
+#line 1176 "parse.tab.c"
 
       default: break;
     }
@@ -1363,7 +1365,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 88 "parse.y"
+#line 90 "parse.y"
 
 
 /* Declarations */
